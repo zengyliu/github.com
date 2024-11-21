@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- dynamicconfigip_betav1_ipconf.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
