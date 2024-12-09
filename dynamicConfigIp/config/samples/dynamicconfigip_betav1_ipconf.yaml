@@ -1,13 +1,19 @@
 apiVersion: dynamicconfigip.github.com/betav1
 kind: Ipconf
 metadata:
-  labels:
-    app.kubernetes.io/name: example
-    app.kubernetes.io/managed-by: kustomize
-  name: ipconf-liu
+  name: ipconf
+  namespace: default
 spec:
-  owner: "nginx-0"
-  iface: eth0
-  ipaddress: "10.10.10.10"
-  netmask: "255.255.25.0"
-  # TODO(user): Add fields here
+  type: bridge
+  owner: mynginx-nginx-chart-1
+  cniVersion: 0.3.1
+  trust: "on"
+  ipItems:
+    - iface: eth0
+      ipaddress: 192.168.1.10
+      netmask: "24"
+      type: static
+    - iface: eth1
+      ipaddress: 192.168.2.10
+      netmask: "24"
+      type: static

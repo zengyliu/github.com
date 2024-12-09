@@ -156,16 +156,16 @@ func (r *IpconfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	var errorCode error
 	var result ctrl.Result
 	for _, pod := range pods.Items {
-		reqLogger.Info("Pod details", "Name", pod.Name, "Namespace", pod.Namespace, "Labels", pod.Labels)
-		if pod.Name == ipConfiguration.Name {
-			reqLogger.Info("Pod details", "Name", pod.Name, "Namespace", pod.Namespace, "Labels", pod.Labels)
-
+		if pod.Name == ipConfiguration.Spec.Owner {
+			reqLogger.Info("mached Pod details", "Name", pod.Name, "Namespace", pod.Namespace, "Labels", pod.Labels)
 			returnResult, returnEc := r.updatePodAnnotations(ctx, pod, ipConfiguration)
 			if returnEc != nil {
 				errorCode = returnEc
 				result = returnResult
 				reqLogger.Info("Pod annotations updated failed", "Error", returnResult)
 			}
+		} else {
+			reqLogger.Info("not matchec", "Name", pod.Name, "owner", ipConfiguration.Spec.Owner)
 		}
 	}
 
