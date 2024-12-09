@@ -20,6 +20,17 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+type IpAddressConfig struct {
+	// Type of the IP configuration.
+	Type string `json:"type,omitempty"`
+	// Iface is interface that ipaddress configure on.
+	Iface string `json:"iface"`
+	// Ipaddress .
+	Ipaddress string `json:"ipaddress,omitempty"`
+	// Netmask .
+	Netmask string `json:"netmask,omitempty"`
+}
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -27,15 +38,16 @@ import (
 type IpconfSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-
+	Type string `json:"type,omitempty"`
 	//owner of the ipaddress
-	Owner string `json:"owner,omitempty"`
-	// Iface is interface that ipaddress configure on.
-	Iface string `json:"iface,omitempty"`
-	// Ipaddress .
-	Ipaddress string `json:"ipaddress,omitempty"`
-	// Netmask .
-	Netmask string `json:"netmask,omitempty"`
+	Owner string `json:"owner"`
+	// cni version
+	CNIVersion string `json:"cniVersion"`
+	// Ipaddr is the list of IP configurations.
+	IpItems []IpAddressConfig `json:"ipItems"`
+	// trust represents the trust level of the IP configuration.
+	// It is an optional field and will be omitted from the JSON output if not set.
+	Trust string `json:"trust,omitempty"`
 }
 
 // IpconfStatus defines the observed state of Ipconf.

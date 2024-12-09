@@ -39,18 +39,46 @@ spec:
           spec:
             description: IpconfSpec defines the desired state of Ipconf.
             properties:
-              iface:
-                description: Iface is interface that ipaddress configure on.
+              cniVersion:
+                description: cni version
                 type: string
-              ipaddress:
-                description: Ipaddress .
-                type: string
-              netmask:
-                description: Netmask .
-                type: string
+              ipItems:
+                description: Ipaddr is the list of IP configurations.
+                items:
+                  properties:
+                    iface:
+                      description: Iface is interface that ipaddress configure on.
+                      type: string
+                    ipaddress:
+                      description: Ipaddress .
+                      type: string
+                    netmask:
+                      description: Netmask .
+                      type: string
+                    type:
+                      description: Type of the IP configuration.
+                      type: string
+                  required:
+                  - iface
+                  type: object
+                type: array
               owner:
                 description: owner of the ipaddress
                 type: string
+              trust:
+                description: |-
+                  trust represents the trust level of the IP configuration.
+                  It is an optional field and will be omitted from the JSON output if not set.
+                type: string
+              type:
+                description: |-
+                  INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
+                  Important: Run "make" to regenerate code after modifying this file
+                type: string
+            required:
+            - cniVersion
+            - ipItems
+            - owner
             type: object
           status:
             description: IpconfStatus defines the observed state of Ipconf.
