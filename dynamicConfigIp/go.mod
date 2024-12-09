@@ -1,4 +1,4 @@
-module github.com/example
+module github.com/dynamicConfigIp
 
 go 1.22.0
 

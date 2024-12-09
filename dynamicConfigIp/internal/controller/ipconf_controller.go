@@ -25,8 +25,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	"github.com/example/api/betav1"
-	dynamicconfigipbetav1 "github.com/example/api/betav1"
+	"github.com/dynamicConfigIp/api/betav1"
+	dynamicconfigipbetav1 "github.com/dynamicConfigIp/api/betav1"
 )
 
 // IpconfReconciler reconciles a Ipconf object

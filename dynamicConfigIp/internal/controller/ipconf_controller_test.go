@@ -27,7 +27,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	dynamicconfigipbetav1 "github.com/example/api/betav1"
+	dynamicconfigipbetav1 "github.com/dynamicConfigIp/api/betav1"
 )
 
 var _ = Describe("Ipconf Controller", func() {

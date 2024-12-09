@@ -35,8 +35,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	dynamicconfigipbetav1 "github.com/example/api/betav1"
-	"github.com/example/internal/controller"
+	dynamicconfigipbetav1 "github.com/dynamicConfigIp/api/betav1"
+	"github.com/dynamicConfigIp/internal/controller"
 	// +kubebuilder:scaffold:imports
 )
 

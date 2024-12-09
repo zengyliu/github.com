@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	"github.com/example/api/betav1"
+	"github.com/dynamicConfigIp/api/betav1"
 )
 
 // IpconfReconciler reconciles a Ipconf object

@@ -33,7 +33,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	dynamicconfigipbetav1 "github.com/example/api/betav1"
+	dynamicconfigipbetav1 "github.com/dynamicConfigIp/api/betav1"
 	// +kubebuilder:scaffold:imports
 )
 
