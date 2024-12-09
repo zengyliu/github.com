@@ -53,15 +53,13 @@ type PodReconciler struct {
 func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// TODO(user): your logic here
 	reqLogger := log.FromContext(ctx)
-	reqLogger.Info("enter Reconciling")
+	reqLogger.Info("pod enter Reconciling")
 
 	var pod corev1.Pod
 	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
 		reqLogger.Error(err, "unable to get Pod")
 		return ctrl.Result{}, err
 	}
-
-	reqLogger.Info("Pod details", "Name", pod.Name, "Namespace", pod.Namespace, "Labels", pod.Labels)
 
 	// Fetch the Pods with the specified label
 	var ipConfigurations betav1.IpconfList
@@ -80,27 +78,27 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	podLabelSelector := labels.SelectorFromSet(map[string]string{"app": "nginx"})
-	podNameSelector := "ubuntu"
+	podLabelSelector := labels.SelectorFromSet(map[string]string{"app.kubernetes.io/instance": "mynginx"})
+	//podNameSelector := "ubuntu"
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		WithEventFilter(predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
-				return podLabelSelector.Matches(labels.Set(e.Object.GetLabels())) &&
-					e.Object.GetName() == podNameSelector
+				return podLabelSelector.Matches(labels.Set(e.Object.GetLabels())) /*&&
+				e.Object.GetName() == podNameSelector*/
 			},
 			UpdateFunc: func(e event.UpdateEvent) bool {
-				return podLabelSelector.Matches(labels.Set(e.ObjectNew.GetLabels())) &&
-					e.ObjectNew.GetName() == podNameSelector
+				return podLabelSelector.Matches(labels.Set(e.ObjectNew.GetLabels())) /*&&
+				e.ObjectNew.GetName() == podNameSelector*/
 			},
 			DeleteFunc: func(e event.DeleteEvent) bool {
-				return podLabelSelector.Matches(labels.Set(e.Object.GetLabels())) &&
-					e.Object.GetName() == podNameSelector
+				return podLabelSelector.Matches(labels.Set(e.Object.GetLabels())) /*&&
+				e.Object.GetName() == podNameSelector*/
 			},
 			GenericFunc: func(e event.GenericEvent) bool {
-				return podLabelSelector.Matches(labels.Set(e.Object.GetLabels())) &&
-					e.Object.GetName() == podNameSelector
+				return podLabelSelector.Matches(labels.Set(e.Object.GetLabels())) /*&&
+				e.Object.GetName() == podNameSelector*/
 			},
 		}).
 		Named("pods with ubuntu").

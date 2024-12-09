@@ -4,10 +4,10 @@ metadata:
   labels:
     app.kubernetes.io/name: example
     app.kubernetes.io/managed-by: kustomize
-  name: ipconf-sample
+  name: ipconf-liu
 spec:
-  owner: "example"
+  owner: "nginx-0"
   iface: eth0
   ipaddress: "10.10.10.10"
-  netmask: "255.255.255.0"
+  netmask: "255.255.25.0"
   # TODO(user): Add fields here
