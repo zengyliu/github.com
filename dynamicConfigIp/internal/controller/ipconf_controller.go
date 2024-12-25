@@ -31,7 +31,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/dynamicConfigIp/api/betav1"
 	dynamicconfigipbetav1 "github.com/dynamicConfigIp/api/betav1"
@@ -77,7 +76,7 @@ func (r *IpconfReconciler) createNetworkAttachmentDefinition(ctx context.Context
 	// Create the NetworkAttachmentDefinition
 	netAttachDef := &netv1.NetworkAttachmentDefinition{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      ipConfiguration.Spec.Owner,
+			Name:      ipConfiguration.Name,
 			Namespace: namespace,
 		},
 		Spec: netv1.NetworkAttachmentDefinitionSpec{
@@ -96,21 +95,6 @@ func (r *IpconfReconciler) createNetworkAttachmentDefinition(ctx context.Context
 	}
 
 	return nil
-}
-
-func (r *IpconfReconciler) updatePodAnnotations(ctx context.Context, pod corev1.Pod, ipConfiguration dynamicconfigipbetav1.Ipconf) (reconcile.Result, error) {
-	if pod.Annotations == nil {
-		pod.Annotations = make(map[string]string)
-	}
-	if existingNetworks, exists := pod.Annotations["k8s.v1.cni.cncf.io/networks"]; !exists || existingNetworks == "" {
-		pod.Annotations["k8s.v1.cni.cncf.io/networks"] = ipConfiguration.Name
-	} else {
-		pod.Annotations["k8s.v1.cni.cncf.io/networks"] = existingNetworks + "," + ipConfiguration.Name
-	}
-	if err := r.Update(ctx, &pod); err != nil {
-		return ctrl.Result{}, err
-	}
-	return reconcile.Result{}, nil
 }
 
 // +kubebuilder:rbac:groups=dynamicconfigip.github.com,resources=ipconfs,verbs=get;list;watch;create;update;patch;delete
@@ -139,6 +123,22 @@ func (r *IpconfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if ipConfiguration.Spec.IpItems == nil || len(ipConfiguration.Spec.IpItems) == 0 {
+		reqLogger.Info("IpItems is empty")
+		return ctrl.Result{}, nil
+	}
+
+	// Create NetworkAttachmentDefinition if not exists
+	var networkAttachmentD netv1.NetworkAttachmentDefinition
+	err := r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: ipConfiguration.Name}, &networkAttachmentD)
+	if err != nil && errors.IsNotFound(err) {
+		returnEc := r.createNetworkAttachmentDefinition(ctx, ipConfiguration, req.Namespace)
+		if returnEc != nil {
+			reqLogger.Info("NetworkAttachmentDefinition creation failed", "Error", returnEc)
+			return ctrl.Result{}, returnEc
+		}
+	}
+
 	// Fetch the Pods with the specified label
 	var pods corev1.PodList
 	if err := r.List(ctx, &pods, client.InNamespace(req.Namespace), client.MatchingLabels{"app.kubernetes.io/instance": "mynginx"}); err != nil {
@@ -146,19 +146,12 @@ func (r *IpconfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
-	// Create NetworkAttachmentDefinition
-	returnEc := r.createNetworkAttachmentDefinition(ctx, ipConfiguration, req.Namespace)
-	if returnEc != nil {
-		reqLogger.Info("NetworkAttachmentDefinition creation failed", "Error", returnEc)
-		return ctrl.Result{}, returnEc
-	}
-
 	var errorCode error
 	var result ctrl.Result
 	for _, pod := range pods.Items {
 		if pod.Name == ipConfiguration.Spec.Owner {
 			reqLogger.Info("mached Pod details", "Name", pod.Name, "Namespace", pod.Namespace, "Labels", pod.Labels)
-			returnResult, returnEc := r.updatePodAnnotations(ctx, pod, ipConfiguration)
+			returnResult, returnEc := UpdatePodAnnotations(r.Client, ctx, pod, ipConfiguration)
 			if returnEc != nil {
 				errorCode = returnEc
 				result = returnResult

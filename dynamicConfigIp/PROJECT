@@ -5,8 +5,8 @@
 domain: github.com
 layout:
 - go.kubebuilder.io/v4
-projectName: example
-repo: github.com/example
+projectName: dynamicConfigIp
+repo: github.com/dynamicConfigIp
 resources:
 - api:
     crdVersion: v1
@@ -15,6 +15,6 @@ resources:
   domain: github.com
   group: dynamicconfigip
   kind: Ipconf
-  path: github.com/example/api/betav1
+  path: github.com/dynamicConfigIp/api/betav1
   version: betav1
 version: "3"
