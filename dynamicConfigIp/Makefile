@@ -93,6 +93,8 @@ lint-fix: golangci-lint ## Run golangci-lint linter and perform fixes
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager cmd/main.go
+	go build -o bin/dynamic-cli cmd/cli.go
+	go build -o bin/dynamic-side-car cmd/sideCar.go
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.

@@ -2,6 +2,8 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
+	"io"
 	"strings"
 
 	corev1 "k8s.io/api/core/v1"
@@ -12,6 +14,26 @@ import (
 	dynamicconfigipbetav1 "github.com/dynamicConfigIp/api/betav1"
 )
 
+type NetworkUpdateRequest struct {
+	Interface string `json:"interface"`
+	IPAddress string `json:"ip_address"`
+	Netmask   string `json:"netmask"`
+	Gateway   string `json:"gateway"`
+	IpType    string `json:"type"`
+}
+
+func NewNetworkUpdateRequest() *NetworkUpdateRequest {
+	return &NetworkUpdateRequest{
+		IpType: "physical",
+	}
+}
+func ParseNetworkUpdateRequest(reqInJson *io.ReadCloser) (NetworkUpdateRequest, error) {
+	req := NewNetworkUpdateRequest()
+	if err := json.NewDecoder(*reqInJson).Decode(req); err != nil {
+		return *req, err
+	}
+	return *req, nil
+}
 func UpdatePodAnnotations(c client.Client, ctx context.Context, pod corev1.Pod, ipConfiguration dynamicconfigipbetav1.Ipconf) (reconcile.Result, error) {
 	if pod.Annotations == nil {
 		pod.Annotations = make(map[string]string)
