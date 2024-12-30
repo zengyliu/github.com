@@ -1,0 +1,108 @@
+---
+# Source: nginx-chart/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: nes-nginx-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: nes-nginx
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: nginx-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nes-nginx-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: nes-nginx
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: nes-nginx
+---
+# Source: nginx-chart/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nes-nginx-nginx-chart
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: nes-nginx
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+    network-config/runtime-ip: true
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: nginx-chart
+      app.kubernetes.io/instance: nes-nginx
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: nginx-chart-0.1.0
+        app.kubernetes.io/name: nginx-chart
+        app.kubernetes.io/instance: nes-nginx
+        app.kubernetes.io/version: "1.16.0"
+        app.kubernetes.io/managed-by: Helm
+        role: "db"
+    spec:
+      serviceAccountName: nes-nginx-nginx-chart
+      securityContext:
+        {}
+      containers:
+        - name: nginx-chart
+          securityContext:
+            {}
+          image: "nginx:1.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {}
+---
+# Source: nginx-chart/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "nes-nginx-nginx-chart-test-connection"
+  labels:
+    helm.sh/chart: nginx-chart-0.1.0
+    app.kubernetes.io/name: nginx-chart
+    app.kubernetes.io/instance: nes-nginx
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['nes-nginx-nginx-chart:80']
+  restartPolicy: Never

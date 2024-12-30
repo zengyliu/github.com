@@ -1,0 +1,26 @@
+apiVersion: dynamicconfigip.github.com/betav1
+kind: SideCarContainer
+metadata:
+  name: network-container
+  namespace: default
+spec:
+  containerName: nes-container
+  imageVersion: "1.1"
+  repo: "dynamic-side-car"
+  serviceName: "nes-service"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: nes-service
+  labels:
+    network-config/runtime-ip: "true"
+spec:
+  ports:
+  - port: 8080
+    name: web
+  clusterIP: None
+  selector:
+    network-config/runtime-ip: "true"

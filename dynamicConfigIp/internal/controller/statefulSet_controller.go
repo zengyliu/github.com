@@ -19,14 +19,18 @@ package controller
 import (
 	"context"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/dynamicConfigIp/api/betav1"
 )
@@ -53,45 +57,73 @@ type PodReconciler struct {
 func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	// TODO(user): your logic here
 	reqLogger := log.FromContext(ctx)
-	reqLogger.Info("pod enter Reconciling")
+	reqLogger.Info("Enter StatefulSet Reconciling")
 
-	var pod corev1.Pod
-	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
-		reqLogger.Error(err, "unable to get Pod")
+	var StatefulSet appsv1.StatefulSet
+	if err := r.Get(ctx, req.NamespacedName, &StatefulSet); err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
+		}
+		reqLogger.Error(err, "unable to get StatefulSet")
 		return ctrl.Result{}, err
 	}
 
-	// Fetch the Pods with the specified label
-	var ipConfigurations betav1.IpconfList
-	if err := r.List(ctx, &ipConfigurations, client.InNamespace(req.Namespace)); err != nil {
-		reqLogger.Error(err, "unable to list ipConfigurations")
+	// Fetch the SideCarContainer object
+	//sideCarContainer := betav1.NewSideCarContainerSpec()
+	var sideCarContainer betav1.SideCarContainer
+	if err := r.Get(ctx, req.NamespacedName, &sideCarContainer); err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			return reconcile.Result{}, nil
+		}
+		reqLogger.Error(err, "unable to get SideCar Container definition")
 		return ctrl.Result{}, err
 	}
 
-	var errorCode error
-	var result ctrl.Result
-	// TODO: Add your logic here to handle the Pods with the specified label
-	for _, ipConf := range ipConfigurations.Items {
-		if pod.Name == ipConf.Spec.Owner {
-			reqLogger.Info("Pod found with ipconf owner", "Pod", pod.Name)
-			returnResult, returnEc := UpdatePodAnnotations(r.Client, ctx, pod, ipConf)
-			if returnEc != nil {
-				errorCode = returnEc
-				result = returnResult
-				reqLogger.Info("Pod annotations updated failed", "Error", returnResult)
-			}
+	if StatefulSet.Spec.ServiceName == "" {
+		StatefulSet.Spec.ServiceName = sideCarContainer.Spec.HeadlessServiceName
+	}
+
+	// Define a new container based on the Ipconf spec and SideCarContainer
+	newContainer := corev1.Container{
+		Name:  sideCarContainer.Spec.ContainerName,
+		Image: sideCarContainer.Spec.Repo + "/" + sideCarContainer.Spec.ImageVersion,
+	}
+
+	// Check if the container already exists in the StatefulSet
+	containerExists := false
+	for _, container := range StatefulSet.Spec.Template.Spec.Containers {
+		if container.Name == newContainer.Name {
+			containerExists = true
+			break
 		}
 	}
 
-	return result, errorCode
+	// Add the new container to the StatefulSet
+	if !containerExists {
+		StatefulSet.Spec.Template.Spec.Containers = append(StatefulSet.Spec.Template.Spec.Containers, newContainer)
+
+		// Update the StatefulSet with the new container
+		if err := r.Update(ctx, &StatefulSet); err != nil {
+			reqLogger.Error(err, "unable to update StatefulSet with new container")
+			return ctrl.Result{}, err
+		}
+	}
+
+	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	podLabelSelector := labels.SelectorFromSet(map[string]string{"app.kubernetes.io/instance": "mynginx"})
+	podLabelSelector := labels.SelectorFromSet(map[string]string{"network-config/runtime-ip": "true"})
 
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.Pod{}).
+		For(&appsv1.StatefulSet{}).
 		WithEventFilter(predicate.Funcs{
 			CreateFunc: func(e event.CreateEvent) bool {
 				return podLabelSelector.Matches(labels.Set(e.Object.GetLabels()))
@@ -106,6 +138,7 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return podLabelSelector.Matches(labels.Set(e.Object.GetLabels()))
 			},
 		}).
-		Named("pods with ubuntu").
+		Watches(&betav1.SideCarContainer{}, &handler.EnqueueRequestForObject{}).
+		Named("statefulsets with ubuntu").
 		Complete(r)
 }
