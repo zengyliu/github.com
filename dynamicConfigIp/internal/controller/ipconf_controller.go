@@ -62,6 +62,7 @@ func (r *IpconfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	var ipConfiguration dynamicconfigipbetav1.Ipconf
 	if err := r.Get(ctx, req.NamespacedName, &ipConfiguration); err != nil {
 		if errors.IsNotFound(err) {
+			reqLogger.Info("Not found Ipconf definition", "error", err.Error())
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -73,21 +74,23 @@ func (r *IpconfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		// on deleted requests.
 		return ctrl.Result{}, nil
 	}
+
+	if ipConfiguration.Spec.IpItems == nil || len(ipConfiguration.Spec.IpItems) == 0 {
+		reqLogger.Info("IpItems is empty")
+		return ctrl.Result{}, nil
+	}
 	// Check if the Pod exists
 	var pod corev1.Pod
 	err := r.Get(ctx, client.ObjectKey{Name: ipConfiguration.Spec.Owner, Namespace: req.Namespace}, &pod)
 	if err != nil {
 		if client.IgnoreNotFound(err) == nil {
+			reqLogger.Info("Not found the owner Pod", "error", err.Error())
 			return ctrl.Result{}, nil
 		}
 		reqLogger.Error(err, "unable to fetch Pod")
 		return ctrl.Result{}, nil
 	}
 
-	if ipConfiguration.Spec.IpItems == nil || len(ipConfiguration.Spec.IpItems) == 0 {
-		reqLogger.Info("IpItems is empty")
-		return ctrl.Result{}, nil
-	}
 	// Create NetworkUpdateRequest array from IpItems
 	networkUpdateRequests := make([]NetworkUpdateRequest, len(ipConfiguration.Spec.IpItems))
 	for i, ipItem := range ipConfiguration.Spec.IpItems {

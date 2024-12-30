@@ -62,6 +62,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	var StatefulSet appsv1.StatefulSet
 	if err := r.Get(ctx, req.NamespacedName, &StatefulSet); err != nil {
 		if errors.IsNotFound(err) {
+			reqLogger.Info("Not found StatefulSet", "error", err.Error())
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -76,6 +77,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	var sideCarContainer betav1.SideCarContainer
 	if err := r.Get(ctx, req.NamespacedName, &sideCarContainer); err != nil {
 		if errors.IsNotFound(err) {
+			reqLogger.Info("Not found SideCarContainer definition", "error", err.Error())
 			// Request object not found, could have been deleted after reconcile request.
 			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
 			// Return and don't requeue
@@ -139,6 +141,6 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			},
 		}).
 		Watches(&betav1.SideCarContainer{}, &handler.EnqueueRequestForObject{}).
-		Named("statefulsets with ubuntu").
+		Named("statefulsets controller").
 		Complete(r)
 }
