@@ -91,7 +91,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	// Define a new container based on the Ipconf spec and SideCarContainer
 	newContainer := corev1.Container{
 		Name:            sideCarContainer.Spec.ContainerName,
-		Image:           sideCarContainer.Spec.Repo + "/" + sideCarContainer.Spec.ImageVersion,
+		Image:           sideCarContainer.Spec.Repo + ":" + sideCarContainer.Spec.ImageVersion,
 		ImagePullPolicy: corev1.PullIfNotPresent,
 	}
 
