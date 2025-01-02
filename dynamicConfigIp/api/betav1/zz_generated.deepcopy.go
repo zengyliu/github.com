@@ -167,7 +167,7 @@ func (in *SideCarContainerList) DeepCopyInto(out *SideCarContainerList) {
 	in.ListMeta.DeepCopyInto(&out.ListMeta)
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
-		*out = make([]Ipconf, len(*in))
+		*out = make([]SideCarContainer, len(*in))
 		for i := range *in {
 			(*in)[i].DeepCopyInto(&(*out)[i])
 		}

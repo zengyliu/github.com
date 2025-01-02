@@ -71,21 +71,18 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		reqLogger.Error(err, "unable to get StatefulSet")
 		return ctrl.Result{}, err
 	}
-
-	// Fetch the SideCarContainer object
-	//sideCarContainer := betav1.NewSideCarContainerSpec()
-	var sideCarContainer betav1.SideCarContainer
-	if err := r.Get(ctx, req.NamespacedName, &sideCarContainer); err != nil {
-		if errors.IsNotFound(err) {
-			reqLogger.Info("Not found SideCarContainer definition", "error", err.Error())
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
-			return reconcile.Result{}, nil
-		}
-		reqLogger.Error(err, "unable to get SideCar Container definition")
+	//list all the sideCarContainer
+	sideCarContainerList := &betav1.SideCarContainerList{}
+	err := r.List(ctx, sideCarContainerList)
+	if err != nil {
+		reqLogger.Info("Failed to list Pods.")
 		return ctrl.Result{}, err
 	}
+
+	if len(sideCarContainerList.Items) == 0 {
+		return ctrl.Result{}, err
+	}
+	sideCarContainer := sideCarContainerList.Items[0]
 
 	if StatefulSet.Spec.ServiceName == "" {
 		StatefulSet.Spec.ServiceName = sideCarContainer.Spec.HeadlessServiceName
@@ -93,8 +90,9 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	// Define a new container based on the Ipconf spec and SideCarContainer
 	newContainer := corev1.Container{
-		Name:  sideCarContainer.Spec.ContainerName,
-		Image: sideCarContainer.Spec.Repo + "/" + sideCarContainer.Spec.ImageVersion,
+		Name:            sideCarContainer.Spec.ContainerName,
+		Image:           sideCarContainer.Spec.Repo + "/" + sideCarContainer.Spec.ImageVersion,
+		ImagePullPolicy: corev1.PullIfNotPresent,
 	}
 
 	// Check if the container already exists in the StatefulSet

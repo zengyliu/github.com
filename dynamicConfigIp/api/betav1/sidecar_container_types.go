@@ -22,6 +22,8 @@ import (
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// SidecarconfSpec defines the desired state of Sidecarconf.
 type SideCarContainerSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// ContainerName is the name of the sidecar container.
@@ -34,7 +36,7 @@ type SideCarContainerSpec struct {
 	HeadlessServiceName string `json:"serviceName,omitempty"`
 }
 
-// IpconfStatus defines the observed state of Ipconf.
+// SidecarconfStatus defines the observed state of Sidecarconf.
 type SideCarContainerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -54,19 +56,11 @@ type SideCarContainer struct {
 
 // +kubebuilder:object:root=true
 
-// SideCarContainerList contains a list of Ipconf.
+// SidecarconfList contains a list of Sidecarconf.
 type SideCarContainerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Ipconf `json:"items"`
-}
-
-func NewSideCarContainerSpec() SideCarContainer {
-	return SideCarContainer{
-		Spec: SideCarContainerSpec{
-			ContainerName: "network-container",
-		},
-	}
+	Items           []SideCarContainer `json:"items"`
 }
 
 func init() {

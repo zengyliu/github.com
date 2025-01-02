@@ -17,6 +17,26 @@ rules:
   - update
   - watch
 - apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - dynamicconfigip.github.com
   resources:
   - ipconfs/finalizers
@@ -26,6 +46,30 @@ rules:
   - dynamicconfigip.github.com
   resources:
   - ipconfs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - dynamicconfigip.github.com
+  resources:
+  - sidecarcontainers
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dynamicconfigip.github.com
+  resources:
+  - sidecarcontainers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - dynamicconfigip.github.com
+  resources:
+  - sidecarcontainers/status
   verbs:
   - get
   - patch

@@ -9,6 +9,7 @@ spec:
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
+  serviceName: "nes-service"
   selector:
     matchLabels:
       {{- include "nginx-chart.selectorLabels" . | nindent 6 }}
