@@ -19,6 +19,7 @@ package controller
 import (
 	"bytes"
 	"context"
+	basicError "errors"
 	"fmt"
 	"net/http"
 
@@ -63,42 +64,47 @@ func (r *IpconfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	if err := r.Get(ctx, req.NamespacedName, &ipConfiguration); err != nil {
 		if errors.IsNotFound(err) {
 			reqLogger.Info("Not found Ipconf definition", "error", err.Error())
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
+			// ignore not-found error, since it's possible that the object was deleted
 			return reconcile.Result{}, nil
 		}
 		reqLogger.Error(err, "unable to fetch ipconf")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
 		return ctrl.Result{}, nil
 	}
 
 	if ipConfiguration.Spec.IpItems == nil || len(ipConfiguration.Spec.IpItems) == 0 {
-		reqLogger.Info("IpItems is empty")
+		reqLogger.Info("IpItems is empty, ignore this request")
 		return ctrl.Result{}, nil
 	}
-	// Check if the Pod exists
+	// Get the owner Pod if the Pod exists
 	var pod corev1.Pod
 	err := r.Get(ctx, client.ObjectKey{Name: ipConfiguration.Spec.Owner, Namespace: req.Namespace}, &pod)
 	if err != nil {
 		if client.IgnoreNotFound(err) == nil {
-			reqLogger.Info("Not found the owner Pod", "error", err.Error())
+			reqLogger.Info("Not found the Pod with name is owner", "error", err.Error())
 			return ctrl.Result{}, nil
 		}
-		reqLogger.Error(err, "unable to fetch Pod")
+		reqLogger.Error(err, "Failed to fetch Pod with name is owner")
 		return ctrl.Result{}, nil
+	}
+
+	if pod.Status.PodIP == "" {
+		reqLogger.Info("Owner Pod IP is empty, and retry later")
+		err := basicError.New("Pod`s IP is empty")
+		return ctrl.Result{}, err
 	}
 
 	// Create NetworkUpdateRequest array from IpItems
 	networkUpdateRequests := make([]NetworkUpdateRequest, len(ipConfiguration.Spec.IpItems))
 	for i, ipItem := range ipConfiguration.Spec.IpItems {
 		networkUpdateRequests[i] = NetworkUpdateRequest{
-			Interface: ipItem.Iface,
-			IPAddress: ipItem.Ipaddress,
-			Netmask:   ipItem.Netmask,
-			IpType:    ipItem.Type,
+			Interface:   ipItem.Iface,
+			IPAddress:   ipItem.Ipaddress,
+			Netmask:     ipItem.Netmask,
+			IpType:      ipItem.Type,
+			Destination: ipItem.Destination,
+			Gateway:     ipItem.Gateway,
 		}
 	}
 
@@ -110,8 +116,8 @@ func (r *IpconfReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Send the NetworkUpdateRequest to the server
-	serverURL := fmt.Sprintf("http://%s:8080/network-update", ipConfiguration.Spec.Owner)
-	reqLogger.Info("Sending NetworkUpdateRequest to server", "URL", serverURL)
+	serverURL := fmt.Sprintf("http://%s:8080/networkupdate", pod.Status.PodIP) //port is hardcoded for now, need to change it to env variable or configmap
+	reqLogger.Info("Sending NetworkUpdateRequest to server", "URL", serverURL, "JSON", string(networkUpdateRequestsJSON))
 
 	httpClient := &http.Client{}
 	httpRequest, err := http.NewRequest("POST", serverURL, bytes.NewBuffer(networkUpdateRequestsJSON))

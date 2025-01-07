@@ -1,8 +1,49 @@
-# example
-// TODO(user): Add simple overview of use/purpose
+# requirements
+- As an user,  I want to configure network configurations runtime 
+- As an user, I want to subscribe network configurations status
+- As an user, I want to query network configurations status runtime
+- As an operator, I want to support network operator module upgrade separately without affect on application(user) 
+- As an operator, I want to re-configuration network configuration if pods restart happen
+- As an operator, I want to cleanup Kubernetes network CR if the CR's owner is deleted
+
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+<img src="docs/architecture-diagram.jpg" alt="architecture-diagram" width="500" height="250">
+
+This feature is used to configure network configurations runtime(detail refer to requirements)
+It is split into 5 child module: nescli, cliserver, nesmanager, nescontroller and nescontainer.
+### nescli
+it is a binary that is called by application.
+it provice following APIs:
+- Configure network configuration(can replace by curl)
+- Subscribe network status(can replace by curl)
+- Network status query
+### nescliserver
+Provide restfulAPI to nescli, and is responsible for creating networkConfiguration CR and networkCare CR
+  - networkConfiguration CR is include network configuration(vlan/ip/route……), generated from the requests from nescli
+    1. CR's owner is StatefulSet's name that POD belong to, this make sure the networkConfigure CR can be deleted when delete the StatefulSet
+    2. the CR's name is same with Pod's name,  the configuration that belong to same pods will be merge into one CR, this make sure as few configuration requests as possible by 
+  - networkCare CR is about the network status subscriber's description, CR's name the subscriber`s name, this is to makesure NetworkCare CR is cleaned when the application is removed
+### nescontroller
+ nescontroller is responsible for inserting nescontainer to StatefulSet that need to configure network configuration runtime. the StatefulSet is identify by label: "network-config/runtime-ip": "true"
+
+### nesmanager
+nesmanager is used as controller to watch StatefulSet, Pods and CR. it has following function:
+ - Network configuration
+   1. Watch networkConfiguration CR, and sync the network configuration to network container, the CR's name is same with pod's name
+   2. Update status of networkConfiguration CR with network container`s responce
+   3. Watch network container`s status, if restart happen, reconfigure network container
+ - Network status
+    1. Watch networkCare CR
+    2. Subscribe network status to network container
+    3. Report network status to application that interesting in
+    4. Support network status query runtime
+### nescontainer
+  nescontainer work together with user, it include following function:
+  - Configure network configuration to linux
+  - Retry if need
+  - Watch network status by netlink ane report to network manager
+  - Support network status query
 
 ## Getting Started
 

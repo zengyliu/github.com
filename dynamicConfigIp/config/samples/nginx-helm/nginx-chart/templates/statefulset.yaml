@@ -24,6 +24,7 @@ spec:
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
+        network-config/runtime-ip: {{ .Values.networkConfig.runtimeIp }}
         role: "db"
     spec:
       {{- with .Values.imagePullSecrets }}

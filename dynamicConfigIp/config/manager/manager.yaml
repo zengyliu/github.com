@@ -7,6 +7,24 @@ metadata:
     app.kubernetes.io/managed-by: kustomize
   name: system
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: controller-manager-cli-service
+  namespace: system
+  labels:
+    control-plane: controller-manager
+    app.kubernetes.io/name: example
+    app.kubernetes.io/managed-by: kustomize
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  selector:
+    control-plane: controller-manager
+  type: ClusterIP
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -64,8 +82,30 @@ spec:
         args:
           - --leader-elect
           - --health-probe-bind-address=:8081
-        image: controller:latest
-        name: manager
+        image: controller:1.3
+        name: controller
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 10
+      - name: cliserver
+        command:
+        - /usr/local/bin/cliServer
+        image: cliserver:1.3
         imagePullPolicy: IfNotPresent
         securityContext:
           allowPrivilegeEscalation: false

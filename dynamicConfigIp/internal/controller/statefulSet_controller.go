@@ -84,15 +84,16 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	}
 	sideCarContainer := sideCarContainerList.Items[0]
 
-	if StatefulSet.Spec.ServiceName == "" {
-		StatefulSet.Spec.ServiceName = sideCarContainer.Spec.HeadlessServiceName
-	}
-
 	// Define a new container based on the Ipconf spec and SideCarContainer
 	newContainer := corev1.Container{
 		Name:            sideCarContainer.Spec.ContainerName,
 		Image:           sideCarContainer.Spec.Repo + ":" + sideCarContainer.Spec.ImageVersion,
 		ImagePullPolicy: corev1.PullIfNotPresent,
+		SecurityContext: &corev1.SecurityContext{
+			Capabilities: &corev1.Capabilities{
+				Add: []corev1.Capability{"NET_ADMIN"},
+			},
+		},
 	}
 
 	// Check if the container already exists in the StatefulSet
@@ -100,6 +101,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	for _, container := range StatefulSet.Spec.Template.Spec.Containers {
 		if container.Name == newContainer.Name {
 			containerExists = true
+			// Update the container image if SideCarContainer image version is newer, to do later.
 			break
 		}
 	}

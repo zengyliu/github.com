@@ -4,16 +4,12 @@ metadata:
   name: ipconf
   namespace: default
 spec:
-  type: bridge
-  owner: mynginx-nginx-chart-1
+  owner: test-nginx-chart-1
   cniVersion: 0.3.1
-  trust: "on"
   ipItems:
     - iface: eth0
       ipaddress: 192.168.1.10
       netmask: "24"
-      type: static
-    - iface: eth1
+    - iface: eth0
       ipaddress: 192.168.2.10
       netmask: "24"
-      type: static

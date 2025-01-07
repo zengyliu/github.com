@@ -26,5 +26,6 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o dy
 FROM ubuntu
 WORKDIR /
 COPY --from=builder /workspace/dynamicConfigIpSideCar .
+RUN setcap NET_ADMIN=+ep /dynamicConfigIpSideCar
 
 ENTRYPOINT ["/dynamicConfigIpSideCar"]

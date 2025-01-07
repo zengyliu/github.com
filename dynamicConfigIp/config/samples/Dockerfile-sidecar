@@ -1,0 +1,11 @@
+# Use distroless as minimal base image to package the manager binary
+# Refer to https://github.com/GoogleContainerTools/distroless for more details
+FROM local_ubuntu:1.1
+ADD bin/nes-sidecar  /usr/local/bin
+#RUN apt update; \
+#    apt install -y iputils-ping net-tools tcpdump curl
+# Create a non-root user with UID and GID 65532
+#RUN useradd -u 65532 -r -s /bin/false nonrootuser
+RUN setcap cap_net_admin+eip /usr/local/bin/nes-sidecar
+USER 65532:65532
+ENTRYPOINT ["/usr/local/bin/nes-sidecar"]

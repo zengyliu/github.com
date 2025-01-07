@@ -29,6 +29,10 @@ type IpAddressConfig struct {
 	Ipaddress string `json:"ipaddress,omitempty"`
 	// Netmask .
 	Netmask string `json:"netmask,omitempty"`
+	// Gateway .
+	Gateway string `json:"gateway,omitempty"`
+	// Destination .
+	Destination string `json:"destination,omitempty"`
 }
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -38,16 +42,10 @@ type IpAddressConfig struct {
 type IpconfSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Type string `json:"type,omitempty"`
-	//owner of the ipaddress
+	// owner of the ipaddress
 	Owner string `json:"owner"`
-	// cni version
-	CNIVersion string `json:"cniVersion"`
 	// Ipaddr is the list of IP configurations.
 	IpItems []IpAddressConfig `json:"ipItems"`
-	// trust represents the trust level of the IP configuration.
-	// It is an optional field and will be omitted from the JSON output if not set.
-	Trust string `json:"trust,omitempty"`
 }
 
 // IpconfStatus defines the observed state of Ipconf.

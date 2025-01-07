@@ -39,13 +39,16 @@ spec:
           spec:
             description: IpconfSpec defines the desired state of Ipconf.
             properties:
-              cniVersion:
-                description: cni version
-                type: string
               ipItems:
                 description: Ipaddr is the list of IP configurations.
                 items:
                   properties:
+                    destination:
+                      description: Destination .
+                      type: string
+                    gateway:
+                      description: Gateway .
+                      type: string
                     iface:
                       description: Iface is interface that ipaddress configure on.
                       type: string
@@ -63,20 +66,12 @@ spec:
                   type: object
                 type: array
               owner:
-                description: owner of the ipaddress
-                type: string
-              trust:
-                description: |-
-                  trust represents the trust level of the IP configuration.
-                  It is an optional field and will be omitted from the JSON output if not set.
-                type: string
-              type:
                 description: |-
                   INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
                   Important: Run "make" to regenerate code after modifying this file
+                  owner of the ipaddress
                 type: string
             required:
-            - cniVersion
             - ipItems
             - owner
             type: object

@@ -15,15 +15,20 @@ func networkUpdateHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Println("Received network request", r.Body)
-	req, err := controller.ParseNetworkUpdateRequest(&r.Body)
-	if err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+
+	reqs := controller.ParseNetworkUpdateRequest(&r.Body)
+	if reqs == nil {
+		http.Error(w, "Failed to parse request method", http.StatusBadRequest)
 		return
 	}
-
-	if err := configureNetwork(req); err != nil {
-		http.Error(w, fmt.Sprintf("Failed to configure network: %v", err), http.StatusInternalServerError)
+	var result error
+	for _, req := range reqs {
+		if err := configureNetwork(&req); err != nil {
+			result = err
+		}
+	}
+	if result != nil {
+		http.Error(w, fmt.Sprintf("Failed to configure network: %v", result), http.StatusInternalServerError)
 		return
 	}
 
@@ -31,20 +36,30 @@ func networkUpdateHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Network configuration updated successfully"))
 }
 
-func configureNetwork(req controller.NetworkUpdateRequest) error {
+func configureNetwork(req *controller.NetworkUpdateRequest) error {
 	// Configure the IP address
-	if err := exec.Command("ip", "addr", "add", fmt.Sprintf("%s/%s", req.IPAddress, req.Netmask), "dev", req.Interface).Run(); err != nil {
-		return fmt.Errorf("failed to add IP address: %v", err)
-	}
-
-	// Bring the interface up
-	if err := exec.Command("ip", "link", "set", req.Interface, "up").Run(); err != nil {
-		return fmt.Errorf("failed to bring interface up: %v", err)
+	fmt.Println("Configuring network with request:", req)
+	if req.IPAddress != "" && req.Netmask != "" && req.Interface != "" {
+		if err := exec.Command("ip", "addr", "add", fmt.Sprintf("%s/%s", req.IPAddress, req.Netmask), "dev", req.Interface).Run(); err != nil {
+			return fmt.Errorf("failed to add IP address: %v", err)
+		}
+		// Bring the interface up
+		if err := exec.Command("ip", "link", "set", req.Interface, "up").Run(); err != nil {
+			return fmt.Errorf("failed to bring interface up: %v", err)
+		}
 	}
 
 	// Configure the gateway
-	if err := exec.Command("ip", "route", "add", "default", "via", req.Gateway, "dev", req.Interface).Run(); err != nil {
-		return fmt.Errorf("failed to add default route: %v", err)
+	if req.Gateway != "" {
+		if req.Destination == "" {
+			if err := exec.Command("ip", "route", "add", "default", "via", req.Gateway).Run(); err != nil {
+				return fmt.Errorf("failed to add default route: %v", err)
+			}
+		} else {
+			if err := exec.Command("ip", "route", "add", req.Destination, "via", req.Gateway).Run(); err != nil {
+				return fmt.Errorf("failed to add route: %v", err)
+			}
+		}
 	}
 
 	return nil

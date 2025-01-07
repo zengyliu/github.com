@@ -5,8 +5,8 @@ metadata:
   namespace: default
 spec:
   containerName: nes-container
-  imageVersion: "1.1"
-  repo: "dynamic-side-car"
+  imageVersion: "1.0"
+  repo: "nes-sidecar"
   serviceName: "nes-service"
 
 ---
